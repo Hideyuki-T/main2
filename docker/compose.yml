@@ -1,0 +1,54 @@
+services:
+  app:
+    container_name: sudoku-app
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    volumes:
+      - ../src:/var/www/html
+    env_file:
+      - .env
+    environment:
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=sudoku-db
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - db
+
+  web:
+    container_name: sudoku-nginx
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    ports:
+      - '${WEB_PORT}:443'
+    volumes:
+      - ../src:/var/www/html
+      - ../src/storage:/var/www/html/storage
+      - ../docker/nginx/ssl:/etc/nginx/ssl
+      - ./nginx/conf.d:/etc/nginx/conf.d  # nginx設定ファイルのマウント
+    env_file:
+      - .env
+    depends_on:
+      - app
+
+  db:
+    container_name: sudoku-db
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    ports:
+      - '5440:5432'
+    volumes:
+      - sudoku-db-volume:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+volumes:
+  sudoku-db-volume:
+  storage-data:
